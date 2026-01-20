@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfilesModule } from './profiles/profiles.module';
-import { CategoriesModule } from './categories/categories.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -40,7 +39,6 @@ import { PaymentMethodModule } from './payment-method/payment-method.module';
     UsersModule,
     AuthModule,
     ProfilesModule,
-    CategoriesModule,
     MenuItemsModule,
     OrdersModule,
     NotificationsModule,

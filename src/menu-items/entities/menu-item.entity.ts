@@ -9,7 +9,6 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { Category } from '../../categories/entities/category.entity';
 import { OrderItem } from 'src/orders/entities/order-item.entity';
 
 @Entity('menu_items')
@@ -61,12 +60,7 @@ export class MenuItem {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Relationships
-  @ManyToOne(() => Category, (category) => category.menuItems, {
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn()
-  category: Category;
+  
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.menuItem)
   orderItems: OrderItem[];

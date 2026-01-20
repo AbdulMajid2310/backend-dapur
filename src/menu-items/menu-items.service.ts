@@ -28,13 +28,12 @@ export class MenuItemService {
   }
 
   findAll(): Promise<MenuItem[]> {
-    return this.menuItemRepository.find({ relations: ['category'] });
+    return this.menuItemRepository.find();
   }
 
 async findFavorites(): Promise<MenuItem[]> {
   return this.menuItemRepository.find({
     where: { isFavorite: true },
-    relations: ['category'],
   });
 }
 
@@ -42,7 +41,7 @@ async findFavorites(): Promise<MenuItem[]> {
 
 
   async findOne(id: string): Promise<MenuItem> {
-    const item = await this.menuItemRepository.findOne({ where: { menuItemId: id }, relations: ['category'] });
+    const item = await this.menuItemRepository.findOne({ where: { menuItemId: id } });
     if (!item) {
       throw new NotFoundException(`MenuItem with ID ${id} not found.`);
     }
