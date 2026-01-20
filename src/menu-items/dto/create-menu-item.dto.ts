@@ -13,8 +13,6 @@ export class CreateMenuItemDto {
   @Type(() => Number) // <-- 2. Tambahkan ini untuk price
   price: number;
 
-  @IsString()
-  category: string;
 
   @IsOptional()
   @IsBoolean()

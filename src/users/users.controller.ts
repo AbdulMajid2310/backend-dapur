@@ -12,6 +12,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -38,12 +39,12 @@ export class UsersController {
     return this.usersService.findAll(queryDto);
   }
 
-  @Get(':id')
+  @Get('detail/:id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FileInterceptor('avatar'))
   update(
     @Param('id', ParseUUIDPipe) id: string,

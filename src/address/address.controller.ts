@@ -1,7 +1,8 @@
 // src/address/address.controller.ts
-import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe, Put, ParseUUIDPipe } from '@nestjs/common';
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Controller('api/addresses')
 export class AddressController {
@@ -19,6 +20,14 @@ export class AddressController {
     return this.addressService.findAll();
   }
 
+  @Put(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateAddressDto: UpdateAddressDto,
+  ) {
+    return this.addressService.update(id, updateAddressDto);
+  }
+
   // Ambil alamat berdasarkan ID
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: string) {
@@ -27,7 +36,8 @@ export class AddressController {
 
   // Hapus alamat berdasarkan ID
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: string) {
-    return this.addressService.remove(id);
-  }
+remove(@Param('id') id: string) {
+  return this.addressService.remove(id);
+}
+
 }

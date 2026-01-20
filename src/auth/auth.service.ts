@@ -49,15 +49,24 @@ export class AuthService {
   }
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOneByEmail(email);
+  const user = await this.usersService.findOneByEmail(email);
 
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user;
-      return result;
-    }
-
-    return null;
+  if (!user) {
+    // Jika email tidak ditemukan
+    throw new UnauthorizedException('Email atau password salah');
   }
+
+  const passwordMatches = await bcrypt.compare(pass, user.password);
+  if (!passwordMatches) {
+    // Jika password tidak cocok
+    throw new UnauthorizedException('Email atau password salah');
+  }
+
+  // Jika valid, kembalikan user tanpa password
+  const { password, ...result } = user;
+  return result;
+}
+
 
   async login(user: User) {
     const payload = {

@@ -42,11 +42,52 @@ export class AddressService {
     return address;
   }
 
-  // Hapus alamat
-  async remove(addressId: string): Promise<{ message: string }> {
-    const address = await this.addressRepository.findOneBy({ addressId });
-    if (!address) throw new NotFoundException(`Address dengan ID ${addressId} tidak ditemukan`);
-    await this.addressRepository.remove(address);
-    return { message: `Address dengan ID ${addressId} berhasil dihapus` };
+  async update(addressId: string, dto: Partial<CreateAddressDto>): Promise<Address> {
+  const address = await this.addressRepository.findOne({
+    where: { addressId },
+    relations: ['user'],
+  });
+
+  if (!address) {
+    throw new NotFoundException(
+      `Address dengan ID ${addressId} tidak ditemukan`,
+    );
   }
+
+  // Jika userId ingin diubah, cek dulu user-nya ada atau tidak
+  if (dto.userId) {
+    const user = await this.userRepository.findOneBy({
+      userId: dto.userId,
+    });
+
+    if (!user) {
+      throw new NotFoundException(
+        `User dengan ID ${dto.userId} tidak ditemukan`,
+      );
+    }
+
+    address.user = user;
+  }
+
+  // Update field yang dikirim saja
+  if (dto.delivery !== undefined) address.delivery = dto.delivery;
+  if (dto.description !== undefined) address.description = dto.description;
+  if (dto.notes !== undefined) address.notes = dto.notes;
+
+  return this.addressRepository.save(address);
+}
+
+
+ async remove(addressId: string): Promise<{ message: string }> {
+  const address = await this.addressRepository.findOneBy({ addressId });
+
+  if (!address) {
+    throw new NotFoundException(`Address dengan ID ${addressId} tidak ditemukan`);
+  }
+
+  await this.addressRepository.remove(address);
+
+  return { message: `Address dengan ID ${addressId} berhasil dihapus` };
+}
+
 }

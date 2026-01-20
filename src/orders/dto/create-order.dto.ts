@@ -1,4 +1,4 @@
-import { IsString, IsArray, ArrayNotEmpty } from 'class-validator';
+import { IsString, IsArray, ArrayNotEmpty, IsUUID } from 'class-validator';
 
 export class CreateOrderDto {
   @IsArray()
@@ -8,6 +8,9 @@ export class CreateOrderDto {
 
   @IsString()
   addressId: string;
+
+  @IsUUID()
+  userId: string;
 
   @IsString()
   paymentMethodId: string;

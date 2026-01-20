@@ -8,6 +8,7 @@ import { Address } from 'src/address/entities/address.entity';
 import { PaymentMethod } from 'src/payment-method/entities/payment-method.entity';
 import { ImageService } from 'src/image-service/image-service.service';
 import { OrderItem } from './entities/order-item.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { OrderItem } from './entities/order-item.entity';
       ShoppingCartItem,
       Address,
       PaymentMethod,
+      User
     ]),
   ],
   controllers: [OrdersController],
