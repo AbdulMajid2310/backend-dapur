@@ -5,56 +5,44 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  Unique, // <-- Pastikan ini diimpor
 } from 'typeorm';
-
-export enum TestimonialStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  HIDDEN = 'hidden',
-}
+import { User } from 'src/users/entities/user.entity';
+import { MenuItem } from 'src/menu-items/entities/menu-item.entity';
+import { Order } from 'src/orders/entities/order.entity';
 
 @Entity('testimonials')
+// PERUBAHAN: Unik berdasarkan user, order, DAN menu item
+@Unique(['user', 'order', 'menuItem']) 
 export class Testimonial {
   @PrimaryGeneratedColumn('uuid')
   testimonialId: string;
 
+  @ManyToOne(() => User, (user) => user.testimonials)
+  user: User;
+
+  @ManyToOne(() => MenuItem, (menuItem) => menuItem.testimonials)
+  menuItem: MenuItem;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  imageUrl: string | null;
+
+  @ManyToOne(() => Order, (order) => order.testimonials)
+  order: Order;
+
   @Column({ type: 'text' })
   comment: string;
 
-  @Column({ type: 'decimal', precision: 2, scale: 1, default: 5 })
+  @Column({ type: 'decimal', precision: 2, scale: 1 })
   rating: number;
 
-  @Column()
-  avatar: string;
-
   @Column({ default: true })
-  isVerified: boolean;
-
-  @Column({
-    type: 'enum',
-    enum: TestimonialStatus,
-    default: TestimonialStatus.DRAFT,
-  })
-  status: TestimonialStatus;
-
-  @Column({ type: 'text', nullable: true })
-  response: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  respondedAt: Date;
-
-  @Column({ type: 'json', nullable: true })
-  metadata: {
-    source?: 'google' | 'website' | 'social_media';
-    orderId?: string;
-    featured?: boolean;
-  };
+  isApproved: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  
 }

@@ -6,6 +6,7 @@ import { User } from "src/users/entities/user.entity";
 import { OrderItem } from "./order-item.entity";
 import { Address } from "src/address/entities/address.entity";
 import { PaymentMethod } from "src/payment-method/entities/payment-method.entity";
+import { Testimonial } from "src/testimonials/entities/testimonial.entity";
 
 export enum OrderStatus {
   PENDING_PAYMENT = 'PENDING_PAYMENT',
@@ -63,4 +64,7 @@ export class Order {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Testimonial, (testimonial) => testimonial.order)
+testimonials: Testimonial[];
 }

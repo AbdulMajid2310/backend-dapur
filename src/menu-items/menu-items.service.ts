@@ -48,18 +48,23 @@ async findFavorites(): Promise<MenuItem[]> {
     return item;
   }
 
-  async update(id: string, updateMenuItemDto: UpdateMenuItemDto, imageFile?: Express.Multer.File): Promise<MenuItem> {
-    const item = await this.findOne(id);
+  // menu-item.service.ts
+async update(id: string, updateMenuItemDto: UpdateMenuItemDto, imageFile?: Express.Multer.File): Promise<MenuItem> {
+ 
+  
+  const item = await this.findOne(id);
 
-    if (imageFile) {
-      await this.imageService.deleteImage(item.image);
-      const { url: newImageUrl } = await this.imageService.convertToWebP(imageFile.buffer);
-      item.image = newImageUrl;
-    }
-
-    this.menuItemRepository.merge(item, updateMenuItemDto);
-    return this.menuItemRepository.save(item);
+  if (imageFile) {
+    await this.imageService.deleteImage(item.image);
+    const { url: newImageUrl } = await this.imageService.convertToWebP(imageFile.buffer);
+    item.image = newImageUrl;
   }
+
+  this.menuItemRepository.merge(item, updateMenuItemDto);
+  const result = await this.menuItemRepository.save(item);
+  
+  return result;
+}
 
   async remove(ids: string | string[]): Promise<void> {
   // Pastikan ids selalu array

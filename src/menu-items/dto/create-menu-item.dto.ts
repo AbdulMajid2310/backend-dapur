@@ -1,8 +1,9 @@
-import { Type } from 'class-transformer';
+// create-menu-item.dto.ts
+import { Transform, Type } from 'class-transformer';
 import { IsString, IsNumber, IsOptional, IsBoolean, IsEnum, IsUUID, IsArray, IsObject, Min, Max } from 'class-validator';
 
 export class CreateMenuItemDto {
- @IsString()
+  @IsString()
   name: string;
 
   @IsString()
@@ -10,18 +11,25 @@ export class CreateMenuItemDto {
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @Type(() => Number) // <-- 2. Tambahkan ini untuk price
+  @Type(() => Number) 
   price: number;
-
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean) 
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isAvailable?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  @Type(() => Boolean) 
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isFavorite?: boolean;
 
   @IsOptional()

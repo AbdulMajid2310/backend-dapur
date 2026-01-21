@@ -13,6 +13,7 @@ import { Order } from '../../orders/entities/order.entity';
 import { Notification } from '../../notifications/entities/notification.entity';
 import { ShoppingCart } from 'src/shopping-cart/entities/shopping-cart.entity';
 import { Address } from 'src/address/entities/address.entity';
+import { Testimonial } from 'src/testimonials/entities/testimonial.entity';
 
 export type UserRole = 'admin' | 'customer';
 
@@ -86,4 +87,7 @@ shoppingCarts: ShoppingCart[];
 
 @OneToMany(() => Address, (address) => address.user)
   addresses: Address[];
+
+  @OneToMany(() => Testimonial, (testimonial) => testimonial.user)
+testimonials: Testimonial[];
 }

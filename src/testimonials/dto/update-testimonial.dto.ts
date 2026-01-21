@@ -1,4 +1,14 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateTestimonialDto } from './create-testimonial.dto';
+// src/testimonials/dto/update-testimonial.dto.ts
+import { IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
 
-export class UpdateTestimonialDto extends PartialType(CreateTestimonialDto) {}
+export class UpdateTestimonialDto {
+  @IsOptional()
+  @IsString()
+  comment?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  rating?: number;
+}

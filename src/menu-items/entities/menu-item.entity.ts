@@ -5,11 +5,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { OrderItem } from 'src/orders/entities/order-item.entity';
+import { Testimonial } from 'src/testimonials/entities/testimonial.entity';
 
 @Entity('menu_items')
 export class MenuItem {
@@ -46,8 +45,6 @@ export class MenuItem {
   @Column({ type: 'int', default: 0 })
   reviewCount: number;
 
-
-
   @Column({ type: 'json', nullable: true })
   allergens: string[];
 
@@ -60,8 +57,9 @@ export class MenuItem {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  
-
   @OneToMany(() => OrderItem, (orderItem) => orderItem.menuItem)
   orderItems: OrderItem[];
+
+  @OneToMany(() => Testimonial, (testimonial) => testimonial.menuItem)
+testimonials: Testimonial[];
 }
