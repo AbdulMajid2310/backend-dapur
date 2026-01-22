@@ -9,6 +9,9 @@ export class CreateMenuItemDto {
   @IsString()
   description: string;
 
+  @IsString()
+  category: string;
+
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Type(() => Number) 

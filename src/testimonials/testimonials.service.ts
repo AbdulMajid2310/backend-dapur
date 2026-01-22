@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Testimonial } from './entities/testimonial.entity';
@@ -173,6 +173,74 @@ async create(
 
     return Object.values(groupedItems);
   }
+
+ async getData(
+  userId: string,
+  orderId: string,
+  orderItemId: string,
+): Promise<Testimonial | null> {
+  try {
+    // 1️⃣ Validasi order milik user & status COMPLETED
+    const order = await this.ordersRepository.findOne({
+      where: {
+        orderId,
+        user: { userId },
+      },
+      relations: ['items', 'items.menuItem'],
+    });
+
+    if (!order) {
+      throw new NotFoundException(
+        'Order tidak ditemukan atau bukan milik user',
+      );
+    }
+
+    if (order.status !== OrderStatus.COMPLETED) {
+      throw new ForbiddenException(
+        'Order belum selesai dan tidak dapat direview',
+      );
+    }
+
+    // 2️⃣ Validasi orderItem ada dalam order tersebut
+    const orderItem = order.items.find(item => item.id === orderItemId);
+    
+    if (!orderItem) {
+      throw new ForbiddenException(
+        'Item order tidak ditemukan pada order ini',
+      );
+    }
+
+    // 3️⃣ Ambil testimonial berdasarkan user + order + menuItem
+    // Menggunakan query builder untuk lebih efisien
+    const testimonial = await this.testimonialsRepository
+      .createQueryBuilder('testimonial')
+      .leftJoinAndSelect('testimonial.user', 'user')
+      .leftJoinAndSelect('testimonial.menuItem', 'menuItem')
+      .leftJoinAndSelect('testimonial.order', 'order')
+      .where('user.userId = :userId', { userId })
+      .andWhere('order.orderId = :orderId', { orderId })
+      .andWhere('menuItem.menuItemId = :menuItemId', { menuItemId: orderItem.menuItem.menuItemId })
+      .getOne();
+
+    // 4️⃣ Kembalikan testimonial atau null jika tidak ada
+    return testimonial || null;
+  } catch (error) {
+    // Log error untuk debugging
+    console.error('Error in getData testimonial:', error);
+    
+    // Re-throw exceptions yang sudah ditangani
+    if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      throw error;
+    }
+    
+    // Handle unexpected errors
+    throw new InternalServerErrorException(
+      'Terjadi kesalahan saat mengambil data testimonial',
+    );
+  }
+}
+
+
 
   async update(testimonialId: string, updateTestimonialDto: UpdateTestimonialDto, user: User, image?: Express.Multer.File): Promise<Testimonial> {
     const queryRunner = this.dataSource.createQueryRunner();

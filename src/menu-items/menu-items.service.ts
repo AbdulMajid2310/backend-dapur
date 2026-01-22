@@ -27,9 +27,14 @@ export class MenuItemService {
     return this.menuItemRepository.save(newItem);
   }
 
-  findAll(): Promise<MenuItem[]> {
-    return this.menuItemRepository.find();
-  }
+ findAll(): Promise<MenuItem[]> {
+  return this.menuItemRepository.find({
+    order: {
+      createdAt: 'DESC', // ✅ TERBARU DI ATAS
+    },
+  });
+}
+
 
 async findFavorites(): Promise<MenuItem[]> {
   return this.menuItemRepository.find({

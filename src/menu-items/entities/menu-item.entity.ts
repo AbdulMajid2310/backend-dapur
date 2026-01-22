@@ -33,6 +33,9 @@ export class MenuItem {
   @Column({ default: false })
   isFavorite: boolean;
 
+  @Column()
+  category: string
+
   @Column({ type: 'int', default: 0 })
   stock: number;
 

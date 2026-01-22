@@ -12,6 +12,10 @@ export class UpdateMenuItemDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Type(() => Number) 

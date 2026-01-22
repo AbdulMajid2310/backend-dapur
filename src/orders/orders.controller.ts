@@ -10,6 +10,7 @@ import {
   Put,
   Query,
   BadRequestException,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { OrdersService } from './orders.service';
@@ -77,6 +78,15 @@ async getOrdersByUser(
 
     return this.ordersService.verifyPayment(orderId, status);
   }
+
+  @Delete(':orderId/user/:userId')
+deleteOrderByUser(
+  @Param('userId') userId: string,
+  @Param('orderId') orderId: string,
+) {
+  return this.ordersService.deleteOrderByUser(userId, orderId);
+}
+
 
   
 }

@@ -113,27 +113,37 @@ async createOrder(dto: CreateOrderDto) {
   };
 }
 
-  async findAll() {
-    const orders = await this.orderRepo.find({
-      relations: ['items', 'items.menuItem', 'address', 'paymentMethod'],
-    });
+ async findAll() {
+  const orders = await this.orderRepo.find({
+    relations: [
+      'items',
+      'items.menuItem',
+      'address',
+      'paymentMethod',
+    ],
+    order: {
+      createdAt: 'DESC', // 🔥 terbaru di atas
+    },
+  });
 
-    return {
-      message: 'Data order berhasil diambil',
-      data: orders,
-    };
-  }
+  return {
+    message: 'Data order berhasil diambil',
+    data: orders,
+  };
+}
+
 
 async findByUser(userId: string, status?: string) {
   // Buat kondisi where
-  const where: any = { user: { userId } };
+  const where: any = {
+    user: { userId },
+  };
 
-  // Jika ada status, tambahkan filter status
+  // Jika ada status, tambahkan filter
   if (status) {
     where.status = status;
   }
 
-  // Ambil semua order milik user tertentu dengan relasi lengkap
   const orders = await this.orderRepo.find({
     where,
     relations: [
@@ -143,8 +153,11 @@ async findByUser(userId: string, status?: string) {
       'address.user',
       'paymentMethod',
       'paymentMethod.profile',
-      'testimonials'
+      'testimonials',
     ],
+    order: {
+      createdAt: 'DESC', // 🔥 ORDER TERBARU DI ATAS
+    },
   });
 
   if (!orders.length) {
@@ -159,6 +172,7 @@ async findByUser(userId: string, status?: string) {
     data: orders,
   };
 }
+
 
 
 
@@ -257,5 +271,46 @@ async findByUser(userId: string, status?: string) {
     },
   };
 }
+
+async deleteOrderByUser(userId: string, orderId: string) {
+  // Cari order berdasarkan orderId + userId
+  const order = await this.orderRepo.findOne({
+    where: {
+      orderId,
+      user: { userId },
+    },
+    relations: ['items'],
+  });
+
+  if (!order) {
+    throw new NotFoundException(
+      'Order tidak ditemukan atau bukan milik user ini',
+    );
+  }
+
+  // Validasi status (opsional tapi sangat disarankan)
+  if (order.status !== OrderStatus.PENDING_PAYMENT) {
+    throw new BadRequestException(
+      'Order tidak dapat dihapus karena sudah diproses',
+    );
+  }
+
+  // Hapus order items terlebih dahulu (jika tidak pakai cascade)
+  if (order.items && order.items.length > 0) {
+    await this.orderItemRepo.remove(order.items);
+  }
+
+  // Hapus order
+  await this.orderRepo.remove(order);
+
+  return {
+    message: 'Order berhasil dihapus',
+    data: {
+      orderId,
+      userId,
+    },
+  };
+}
+
 
 }

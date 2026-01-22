@@ -73,22 +73,14 @@ export class UsersService {
 
   /** ========= CREATE USER ========= */
 
-  async create(
-    createUserDto: CreateUserDto,
-    file?: Express.Multer.File,
-  ): Promise<{ message: string; data: UserWithoutPassword }> {
-    const existingUser = await this.userRepository.findOneBy({
-      email: createUserDto.email,
-    });
-
-    if (existingUser) {
-      throw new BadRequestException('Email already exists');
-    }
-
+ async create(
+  createUserDto: CreateUserDto,
+  file?: Express.Multer.File,
+): Promise<{ message: string; data: UserWithoutPassword }> {
+  try {
     const hashedPassword = await this.hashPassword(createUserDto.password);
 
     let avatarUrl: string | undefined;
-
     if (file) {
       const image = await this.imageService.convertToWebP(file.buffer);
       avatarUrl = image.url;
@@ -106,7 +98,24 @@ export class UsersService {
       message: 'User created successfully',
       data: this.excludePassword(savedUser),
     };
+  } catch (error: any) {
+    // ✅ MYSQL DUPLICATE ENTRY
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      if (error.sqlMessage?.includes('email')) {
+        throw new BadRequestException('Email already exists');
+      }
+      if (error.sqlMessage?.includes('phone')) {
+        throw new BadRequestException('Phone number already exists');
+      }
+
+      throw new BadRequestException('Email or phone already exists');
+    }
+
+    throw error;
   }
+}
+
+
 
   /** ========= GET ALL USERS ========= */
 

@@ -23,20 +23,21 @@ import { CreateTestimonialDto } from './dto/create-testimonial.dto';
 import { CreateMultipleTestimonialsDto } from './dto/create-multiple-testimonials.dto';
 import { UpdateTestimonialDto } from './dto/update-testimonial.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { createResponse } from 'src/common/utils/respon.util';
 
 @Controller('api/testimonials')
 // @UseGuards(JwtAuthGuard)
 export class TestimonialsController {
-  constructor(private readonly testimonialsService: TestimonialsService) {}
+  constructor(private readonly testimonialsService: TestimonialsService) { }
 
- @Post()
-@UseInterceptors(FileInterceptor('image'))
-create(
-  @Body() createTestimonialDto: CreateTestimonialDto,
-  @UploadedFile() image: Express.Multer.File,
-) {
-  return this.testimonialsService.create(createTestimonialDto, image);
-}
+  @Post()
+  @UseInterceptors(FileInterceptor('image'))
+  create(
+    @Body() createTestimonialDto: CreateTestimonialDto,
+    @UploadedFile() image: Express.Multer.File,
+  ) {
+    return this.testimonialsService.create(createTestimonialDto, image);
+  }
 
 
   @Post('batch')
@@ -63,6 +64,21 @@ create(
   findEligibleOrders(@Request() req) {
     return this.testimonialsService.findUserCompletedOrdersWithUnreviewedItems(req.user.userId);
   }
+
+  @Get('user/:userId/order/:orderId/order-item/:menuItemId')
+  async getTestimonialData(
+    @Param('userId') userId: string,
+    @Param('orderId') orderId: string,
+    @Param('orderItemId') orderItemId: string,
+  ) {
+    const data= await this.testimonialsService.getData(
+      userId,
+      orderId,
+      orderItemId,
+    );
+    return createResponse('data berhasil ditemukan', data)
+  }
+
 
   @Get(':id')
   findOne(@Param('id') id: string) {
