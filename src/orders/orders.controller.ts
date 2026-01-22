@@ -44,6 +44,14 @@ async getOrdersByUser(
   return await this.ordersService.findByUser(userId, status);
 }
 
+@Get(':orderId/items/:itemId')
+  async getDataItem(
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string
+  ) {
+    return this.ordersService.getData(orderId, itemId);
+  }
+
 
   @Post(':orderId/payment-proof')
   @UseInterceptors(FileInterceptor('file'))

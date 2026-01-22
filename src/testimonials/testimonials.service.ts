@@ -26,33 +26,40 @@ export class TestimonialsService {
     private imageService: ImageService,
   ) {}
 
-  async create(createTestimonialDto: CreateTestimonialDto, user: User, image?: Express.Multer.File): Promise<Testimonial> {
-    const { menuItemId, orderId, comment, rating } = createTestimonialDto;
+async create(
+  createTestimonialDto: CreateTestimonialDto,
+  image?: Express.Multer.File,
+): Promise<Testimonial> {
+  const { menuItemId, orderId, comment, rating, userId } = createTestimonialDto;
 
-    const order = await this.findAndValidateOrder(orderId, user.userId);
-    this.checkItemInOrder(order, menuItemId);
-    await this.checkExistingTestimonial(user.userId, orderId, menuItemId);
+  // 🔹 VALIDASI: cek order milik userId
+  const order = await this.findAndValidateOrder(orderId, userId);
+  this.checkItemInOrder(order, menuItemId);
+  await this.checkExistingTestimonial(userId, orderId, menuItemId);
 
-    let imageUrl: string | null = null;
-    if (image) {
-      const convertedImage = await this.imageService.convertToWebP(image.buffer);
-      imageUrl = convertedImage.url;
-    }
-
-    const testimonial = this.testimonialsRepository.create({
-      user,
-      menuItem: { menuItemId },
-      order: { orderId },
-      comment,
-      rating,
-      imageUrl,
-    });
-
-    const savedTestimonial = await this.testimonialsRepository.save(testimonial);
-    await this.updateMenuItemRating(menuItemId);
-
-    return savedTestimonial;
+  let imageUrl: string | null = null;
+  if (image) {
+    const convertedImage = await this.imageService.convertToWebP(image.buffer);
+    imageUrl = convertedImage.url;
   }
+
+  const testimonial = this.testimonialsRepository.create({
+    user: { userId },
+    menuItem: { menuItemId },
+    order: { orderId },
+    comment,
+    rating,
+    imageUrl,
+  });
+
+  const savedTestimonial = await this.testimonialsRepository.save(testimonial);
+  await this.updateMenuItemRating(menuItemId);
+
+  return savedTestimonial;
+}
+
+
+
 
   async createMultiple(createMultipleTestimonialsDto: CreateMultipleTestimonialsDto, user: User): Promise<Testimonial[]> {
     const { orderId, items } = createMultipleTestimonialsDto;

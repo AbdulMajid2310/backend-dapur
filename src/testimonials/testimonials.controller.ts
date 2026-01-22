@@ -24,29 +24,20 @@ import { CreateMultipleTestimonialsDto } from './dto/create-multiple-testimonial
 import { UpdateTestimonialDto } from './dto/update-testimonial.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-@Controller('testimonials')
-@UseGuards(JwtAuthGuard)
+@Controller('api/testimonials')
+// @UseGuards(JwtAuthGuard)
 export class TestimonialsController {
   constructor(private readonly testimonialsService: TestimonialsService) {}
 
-  @Post()
-  @UseInterceptors(FileInterceptor('image'))
-  create(
-    @Body() createTestimonialDto: CreateTestimonialDto,
-    @Request() req,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp)$/ }),
-        ],
-        fileIsRequired: false,
-      }),
-    )
-    image?: Express.Multer.File,
-  ) {
-    return this.testimonialsService.create(createTestimonialDto, req.user, image);
-  }
+ @Post()
+@UseInterceptors(FileInterceptor('image'))
+create(
+  @Body() createTestimonialDto: CreateTestimonialDto,
+  @UploadedFile() image: Express.Multer.File,
+) {
+  return this.testimonialsService.create(createTestimonialDto, image);
+}
+
 
   @Post('batch')
   createMultiple(@Body() createMultipleTestimonialsDto: CreateMultipleTestimonialsDto, @Request() req) {

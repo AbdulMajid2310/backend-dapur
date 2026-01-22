@@ -143,6 +143,7 @@ async findByUser(userId: string, status?: string) {
       'address.user',
       'paymentMethod',
       'paymentMethod.profile',
+      'testimonials'
     ],
   });
 
@@ -172,6 +173,26 @@ async findByUser(userId: string, status?: string) {
     return {
       message: 'Detail order berhasil diambil',
       data: order,
+    };
+  }
+
+    // === METODE BARU ===
+  async getData(orderId: string, itemId: string) {
+    const orderItem = await this.orderItemRepo.findOne({
+      where: {
+        id: itemId,
+        order: { orderId: orderId },
+      },
+      relations: ['menuItem'],
+    });
+
+    if (!orderItem) {
+      throw new NotFoundException('Item order tidak ditemukan');
+    }
+
+    return {
+      message: 'Detail item order berhasil diambil',
+      data: orderItem,
     };
   }
 
