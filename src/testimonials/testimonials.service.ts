@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Testimonial } from './entities/testimonial.entity';
@@ -24,39 +24,80 @@ export class TestimonialsService {
     private menuItemsRepository: Repository<MenuItem>,
     private dataSource: DataSource,
     private imageService: ImageService,
-  ) {}
+  ) { }
 
-async create(
-  createTestimonialDto: CreateTestimonialDto,
-  image?: Express.Multer.File,
-): Promise<Testimonial> {
-  const { menuItemId, orderId, comment, rating, userId } = createTestimonialDto;
+  async create(
+    createTestimonialDto: CreateTestimonialDto,
+    image?: Express.Multer.File,
+  ): Promise<Testimonial> {
+    const {
+      userId,
+      orderId,
+      orderItemId,
+      menuItemId,
+      comment,
+      rating,
+    } = createTestimonialDto;
 
-  // 🔹 VALIDASI: cek order milik userId
-  const order = await this.findAndValidateOrder(orderId, userId);
-  this.checkItemInOrder(order, menuItemId);
-  await this.checkExistingTestimonial(userId, orderId, menuItemId);
+    // 1️⃣ Validasi: order milik user
+    const order = await this.findAndValidateOrder(orderId, userId);
 
-  let imageUrl: string | null = null;
-  if (image) {
-    const convertedImage = await this.imageService.convertToWebP(image.buffer);
-    imageUrl = convertedImage.url;
+    // 2️⃣ Validasi: orderItem dan menuItem sesuai
+    const orderItem = order.items.find(
+      (item) =>
+        item.orderItemId === orderItemId &&
+        item.menuItem.menuItemId === menuItemId,
+    );
+
+    if (!orderItem) {
+      throw new BadRequestException(
+        'Order item tidak valid atau tidak sesuai dengan menu',
+      );
+    }
+
+    // 3️⃣ Cek testimonial sudah ada untuk kombinasi ini
+    const existingTestimonial = await this.testimonialsRepository.findOne({
+      where: {
+        orderItem: { orderItemId },
+        user: { userId },
+      },
+    });
+
+    if (existingTestimonial) {
+      throw new BadRequestException(
+        'Testimonial untuk item ini sudah dibuat',
+      );
+    }
+
+    // 4️⃣ Handle image jika ada
+    let imageUrl: string | null = null;
+    if (image) {
+      const convertedImage = await this.imageService.convertToWebP(image.buffer);
+      imageUrl = convertedImage.url;
+    }
+
+    // 5️⃣ Buat testimonial
+    const testimonial = this.testimonialsRepository.create({
+      user: { userId },
+      order: { orderId },
+      orderItem: { orderItemId },
+      menuItem: { menuItemId },
+      comment,
+      rating,
+      imageUrl,
+      isApproved: true, // atau false kalau butuh moderasi
+    });
+
+    // 6️⃣ Simpan
+    const savedTestimonial = await this.testimonialsRepository.save(testimonial);
+
+    // 7️⃣ Update rating menuItem
+    await this.updateMenuItemRating(menuItemId);
+
+    return savedTestimonial;
   }
 
-  const testimonial = this.testimonialsRepository.create({
-    user: { userId },
-    menuItem: { menuItemId },
-    order: { orderId },
-    comment,
-    rating,
-    imageUrl,
-  });
 
-  const savedTestimonial = await this.testimonialsRepository.save(testimonial);
-  await this.updateMenuItemRating(menuItemId);
-
-  return savedTestimonial;
-}
 
 
 
@@ -92,7 +133,7 @@ async create(
 
       const savedTestimonials = await queryRunner.manager.save(newTestimonials);
       const uniqueMenuItemIds = [...new Set(savedTestimonials.map(t => t.menuItem.menuItemId))];
-      
+
       for (const menuItemId of uniqueMenuItemIds) {
         await this.updateMenuItemRatingWithinTransaction(menuItemId, queryRunner);
       }
@@ -110,6 +151,9 @@ async create(
 
   async findAll(): Promise<Testimonial[]> {
     return this.testimonialsRepository.find({
+      order: {
+      createdAt: 'DESC', 
+    },
       relations: ['user', 'menuItem', 'order'],
     });
   }
@@ -174,19 +218,20 @@ async create(
     return Object.values(groupedItems);
   }
 
- async getData(
-  userId: string,
-  orderId: string,
-  orderItemId: string,
-): Promise<Testimonial | null> {
-  try {
-    // 1️⃣ Validasi order milik user & status COMPLETED
+  async getData(
+    userId: string,
+    orderId: string,
+    orderItemId: string,
+    menuItemId: string,
+  ): Promise<Testimonial | null> {
+
+    // 1️⃣ Validasi order milik user
     const order = await this.ordersRepository.findOne({
       where: {
         orderId,
         user: { userId },
       },
-      relations: ['items', 'items.menuItem'],
+      relations: ['items', 'items.menuItem', 'user'],
     });
 
     if (!order) {
@@ -201,44 +246,32 @@ async create(
       );
     }
 
-    // 2️⃣ Validasi orderItem ada dalam order tersebut
-    const orderItem = order.items.find(item => item.id === orderItemId);
-    
+    // 2️⃣ Validasi orderItem & menuItem
+    const orderItem = order.items.find(
+      (item) =>
+        item.orderItemId === orderItemId &&
+        item.menuItem.menuItemId === menuItemId,
+    );
+
     if (!orderItem) {
       throw new ForbiddenException(
-        'Item order tidak ditemukan pada order ini',
+        'Order item tidak sesuai dengan menu',
       );
     }
 
-    // 3️⃣ Ambil testimonial berdasarkan user + order + menuItem
-    // Menggunakan query builder untuk lebih efisien
-    const testimonial = await this.testimonialsRepository
-      .createQueryBuilder('testimonial')
-      .leftJoinAndSelect('testimonial.user', 'user')
-      .leftJoinAndSelect('testimonial.menuItem', 'menuItem')
-      .leftJoinAndSelect('testimonial.order', 'order')
-      .where('user.userId = :userId', { userId })
-      .andWhere('order.orderId = :orderId', { orderId })
-      .andWhere('menuItem.menuItemId = :menuItemId', { menuItemId: orderItem.menuItem.menuItemId })
-      .getOne();
+    // 3️⃣ Ambil testimonial berdasarkan orderItem
+    const testimonial = await this.testimonialsRepository.findOne({
+      where: {
+        orderItem: { orderItemId },
+        user: { userId },
+      },
+      relations: ['menuItem', 'orderItem', 'user'],
+    });
 
-    // 4️⃣ Kembalikan testimonial atau null jika tidak ada
     return testimonial || null;
-  } catch (error) {
-    // Log error untuk debugging
-    console.error('Error in getData testimonial:', error);
-    
-    // Re-throw exceptions yang sudah ditangani
-    if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-      throw error;
-    }
-    
-    // Handle unexpected errors
-    throw new InternalServerErrorException(
-      'Terjadi kesalahan saat mengambil data testimonial',
-    );
   }
-}
+
+
 
 
 
@@ -246,7 +279,7 @@ async create(
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-    
+
     try {
       const testimonial = await queryRunner.manager.findOne(Testimonial, {
         where: { testimonialId },
@@ -272,7 +305,7 @@ async create(
 
       const updatedData = { ...updateTestimonialDto, imageUrl: newImageUrl };
       await queryRunner.manager.update(Testimonial, testimonialId, updatedData);
-      
+
       await this.updateMenuItemRatingWithinTransaction(testimonial.menuItem.menuItemId, queryRunner);
       await queryRunner.commitTransaction();
 
@@ -300,13 +333,13 @@ async create(
       if (!testimonial) {
         throw new NotFoundException(`Testimonial with ID ${testimonialId} not found`);
       }
-      
+
       if (testimonial.user.userId !== user.userId) {
         throw new ForbiddenException('You can only delete your own testimonials');
       }
 
       await queryRunner.manager.remove(Testimonial, testimonial);
-      
+
       if (testimonial.imageUrl) {
         await this.imageService.deleteImage(testimonial.imageUrl);
       }
@@ -326,7 +359,7 @@ async create(
 
   private async findAndValidateOrder(orderId: string, userId: string, manager?: EntityManager): Promise<Order> {
     const orderRepo = manager ? manager.getRepository(Order) : this.ordersRepository;
-    
+
     const order = await orderRepo.findOne({
       where: { orderId, user: { userId } },
       relations: ['items', 'items.menuItem'],
@@ -350,7 +383,7 @@ async create(
 
   private async checkExistingTestimonial(userId: string, orderId: string, menuItemId: string, manager?: EntityManager): Promise<boolean> {
     const testimonialRepo = manager ? manager.getRepository(Testimonial) : this.testimonialsRepository;
-    
+
     const exists = await testimonialRepo.findOne({
       where: { user: { userId }, order: { orderId }, menuItem: { menuItemId } },
     });
@@ -382,7 +415,7 @@ async create(
       reviewCount: testimonials.length,
     });
   }
-  
+
   private async updateMenuItemRatingWithinTransaction(menuItemId: string, queryRunner: any): Promise<void> {
     const testimonials = await queryRunner.manager.find(Testimonial, {
       where: { menuItem: { menuItemId }, isApproved: true },
@@ -402,5 +435,25 @@ async create(
       rating: averageRating as number,
       reviewCount: testimonials.length,
     });
+  }
+
+  async removeAdmin(id: string): Promise<{ message: string; data: null }> {
+    const testimonial = await this.testimonialsRepository.findOneBy({ testimonialId: id });
+
+    if (!testimonial) {
+      throw new NotFoundException(`testimonial with ID ${id} not found`);
+    }
+
+    // Hapus avatar jika ada
+    if (testimonial.imageUrl) {
+      await this.imageService.deleteImage(testimonial.imageUrl);
+    }
+
+    await this.testimonialsRepository.remove(testimonial);
+
+    return {
+      message: 'User deleted successfully',
+      data: null,
+    };
   }
 }

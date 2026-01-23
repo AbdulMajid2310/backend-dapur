@@ -11,6 +11,7 @@ import {
 import { User } from 'src/users/entities/user.entity';
 import { MenuItem } from 'src/menu-items/entities/menu-item.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { OrderItem } from 'src/orders/entities/order-item.entity';
 
 @Entity('testimonials')
 // PERUBAHAN: Unik berdasarkan user, order, DAN menu item
@@ -30,6 +31,9 @@ export class Testimonial {
 
   @ManyToOne(() => Order, (order) => order.testimonials)
   order: Order;
+
+  @ManyToOne(() => OrderItem, (orderItem) => orderItem.testimonials)
+  orderItem: OrderItem;
 
   @Column({ type: 'text' })
   comment: string;

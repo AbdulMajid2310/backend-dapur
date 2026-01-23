@@ -6,14 +6,16 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { MenuItem } from 'src/menu-items/entities/menu-item.entity';
 import { Order } from 'src/orders/entities/order.entity';
+import { Testimonial } from 'src/testimonials/entities/testimonial.entity';
 
 @Entity('order_items')
 export class OrderItem {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  orderItemId: string;
 
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn()
@@ -31,6 +33,9 @@ export class OrderItem {
 
   @Column('decimal')
   subtotal: number;
+
+  @OneToMany(() => Testimonial, (testimonial) => testimonial.orderItem)
+testimonials: Testimonial[];
 
   @CreateDateColumn()
   createdAt: Date;

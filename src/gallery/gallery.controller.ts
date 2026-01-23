@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { GalleryService } from './gallery.service';
 import { CreateGalleryDto } from './dto/create-gallery.dto';
 import { UpdateGalleryDto } from './dto/update-gallery.dto';
+import { createResponse } from 'src/common/utils/respon.util';
 
 @Controller('api/gallery')
 export class GalleryController {
@@ -30,8 +31,9 @@ export class GalleryController {
   }
 
   @Get()
-  findAll() {
-    return this.galleryService.findAll();
+  async findAll() {
+    const data = await this.galleryService.findAll();
+    return createResponse('gallery berhasil di temukan', data)
   }
 
   @Get(':id')

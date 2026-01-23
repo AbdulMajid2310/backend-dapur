@@ -46,8 +46,9 @@ export class TestimonialsController {
   }
 
   @Get()
-  findAll() {
-    return this.testimonialsService.findAll();
+  async findAll() {
+    const data = await this.testimonialsService.findAll();
+    return createResponse('data berhasil diutemukan', data)
   }
 
   @Get('menu-item/:menuItemId')
@@ -65,19 +66,25 @@ export class TestimonialsController {
     return this.testimonialsService.findUserCompletedOrdersWithUnreviewedItems(req.user.userId);
   }
 
-  @Get('user/:userId/order/:orderId/order-item/:menuItemId')
-  async getTestimonialData(
-    @Param('userId') userId: string,
-    @Param('orderId') orderId: string,
-    @Param('orderItemId') orderItemId: string,
-  ) {
-    const data= await this.testimonialsService.getData(
-      userId,
-      orderId,
-      orderItemId,
-    );
-    return createResponse('data berhasil ditemukan', data)
-  }
+  @Get(
+  'user/:userId/order/:orderId/order-item/:orderItemId/menu/:menuItemId',
+)
+async getTestimonialData(
+  @Param('userId') userId: string,
+  @Param('orderId') orderId: string,
+  @Param('orderItemId') orderItemId: string,
+  @Param('menuItemId') menuItemId: string,
+) {
+  const data = await this.testimonialsService.getData(
+    userId,
+    orderId,
+    orderItemId,
+    menuItemId,
+  );
+
+  return createResponse('data berhasil ditemukan', data);
+}
+
 
 
   @Get(':id')
@@ -110,4 +117,10 @@ export class TestimonialsController {
   remove(@Param('id') id: string, @Request() req) {
     return this.testimonialsService.remove(id, req.user);
   }
+
+  @Delete('admin/:id')
+    @HttpCode(HttpStatus.OK)
+    removeAdmin(@Param('id') id: string) {
+      return this.testimonialsService.removeAdmin(id);
+    }
 }

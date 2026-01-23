@@ -191,10 +191,10 @@ async findByUser(userId: string, status?: string) {
   }
 
     // === METODE BARU ===
-  async getData(orderId: string, itemId: string) {
+  async getData(orderId: string, orderItemId: string) {
     const orderItem = await this.orderItemRepo.findOne({
       where: {
-        id: itemId,
+        orderItemId: orderItemId,
         order: { orderId: orderId },
       },
       relations: ['menuItem'],

@@ -7,6 +7,10 @@ export class CreateTestimonialDto {
   @IsNotEmpty()
   menuItemId: string;
 
+  @IsUUID()
+  @IsNotEmpty()
+  orderItemId: string;
+
   @IsString()
   orderId: string;
 

@@ -32,6 +32,7 @@ export class MenuItemService {
     order: {
       createdAt: 'DESC', // ✅ TERBARU DI ATAS
     },
+     relations: ['testimonials.user'],
   });
 }
 
@@ -39,6 +40,10 @@ export class MenuItemService {
 async findFavorites(): Promise<MenuItem[]> {
   return this.menuItemRepository.find({
     where: { isFavorite: true },
+     order: {
+      createdAt: 'DESC', // ✅ TERBARU DI ATAS
+    },
+     relations: ['testimonials.user'],
   });
 }
 
