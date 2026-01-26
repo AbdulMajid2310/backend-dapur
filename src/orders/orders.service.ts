@@ -277,7 +277,9 @@ async deleteOrderByUser(userId: string, orderId: string) {
   const order = await this.orderRepo.findOne({
     where: {
       orderId,
-      user: { userId },
+      user: {
+        userId,
+      },
     },
     relations: ['items'],
   });
@@ -288,15 +290,8 @@ async deleteOrderByUser(userId: string, orderId: string) {
     );
   }
 
-  // Validasi status (opsional tapi sangat disarankan)
-  if (order.status !== OrderStatus.PENDING_PAYMENT) {
-    throw new BadRequestException(
-      'Order tidak dapat dihapus karena sudah diproses',
-    );
-  }
-
   // Hapus order items terlebih dahulu (jika tidak pakai cascade)
-  if (order.items && order.items.length > 0) {
+  if (order.items?.length) {
     await this.orderItemRepo.remove(order.items);
   }
 
@@ -306,11 +301,12 @@ async deleteOrderByUser(userId: string, orderId: string) {
   return {
     message: 'Order berhasil dihapus',
     data: {
-      orderId,
+      orderId: order.orderId,
       userId,
     },
   };
 }
+
 
 
 }
